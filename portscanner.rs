@@ -21,7 +21,7 @@ async fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         println!("Invalid amount of arguments");
-        println!("Syntax: terrible_scanner <ip_address>");
+        println!("Syntax: awesome_scanner <ip_address>");
         process::exit(1);
     }
 
