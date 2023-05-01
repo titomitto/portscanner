@@ -1,15 +1,13 @@
-use std::env;
 use std::net::IpAddr;
-use std::process;
 use std::str::FromStr;
+use clap::{App, Arg};
 use tokio::net::TcpStream;
+use std::time::Duration;
 use tokio::time::timeout;
-use tokio::time::Duration;
-use chrono::{Local};
 
 async fn scan_port(target_ip: IpAddr, port: u16) {
     let addr = format!("{}:{}", target_ip, port);
-    let stream = TcpStream::connect(addr).await;
+    let stream =  TcpStream::connect(addr).await;
 
     if let Ok(_) = stream {
         println!("Port {} is open", port);
@@ -18,38 +16,26 @@ async fn scan_port(target_ip: IpAddr, port: u16) {
 
 #[tokio::main]
 async fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("Invalid amount of arguments");
-        println!("Syntax: awesome_scanner <ip_address> [max_port]");
-        process::exit(1);
-    }
+    let matches = App::new("Awesome Port Scanner")
+        .arg(Arg::with_name("IP_ADDRESS")
+            .help("The IP address to scan")
+            .required(true)
+            .index(1))
+        .arg(Arg::with_name("MAX_PORT")
+            .help("The maximum port number to scan")
+            .takes_value(true)
+            .short('m')
+            .long("max-port")
+            .default_value("1000"))
+        .get_matches();
 
-    let target_ip = match IpAddr::from_str(&args[1]) {
-        Ok(ip) => ip,
-        Err(_) => {
-            println!("Cannot resolve hostname");
-            process::exit(1);
-        }
-    };
+    let target_ip = matches.value_of("IP_ADDRESS").unwrap();
+    let target_ip = IpAddr::from_str(target_ip).unwrap();
 
-    
-    let max_port = if args.len() >= 3 {
-        match args[2].parse::<u16>() {
-            Ok(port) => port,
-            Err(_) => {
-                println!("Invalid max port number");
-                process::exit(1);
-            }
-        }
-    } else {
-        1000
-    };
-
-    
+    let max_port = matches.value_of("MAX_PORT").unwrap().parse::<u16>().unwrap();
 
     let lines = "-".repeat(50);
-    let start_time = Local::now();
+    let start_time = chrono::Local::now();
 
     println!("{}", lines);
     println!("Scanning target {} up to port {}", target_ip, max_port);
@@ -60,10 +46,7 @@ async fn main() {
     for port in 1..=max_port {
         let target_ip = target_ip.clone();
         let task = tokio::spawn(async move {
-            let result = timeout(Duration::from_secs(1), scan_port(target_ip, port)).await;
-            if result.is_err() {
-                //println!("Port {} is closed", port);
-            }
+            timeout(Duration::from_secs(1), scan_port(target_ip, port)).await
         });
         tasks.push(task);
     }
@@ -71,4 +54,5 @@ async fn main() {
     for task in tasks {
         let _ = task.await;
     }
+    println!("Scanning complete!");
 }
