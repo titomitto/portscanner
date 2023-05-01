@@ -34,6 +34,19 @@ async fn main() {
     };
 
     
+    let max_port = if args.len() >= 3 {
+        match args[2].parse::<u16>() {
+            Ok(port) => port,
+            Err(_) => {
+                println!("Invalid max port number");
+                process::exit(1);
+            }
+        }
+    } else {
+        1000
+    };
+
+    
 
     let lines = "-".repeat(50);
 
@@ -43,7 +56,7 @@ async fn main() {
     println!("{}", lines);
 
     let mut tasks = Vec::new();
-    for port in 1..=1000 {
+    for port in 1..=max_port {
         let target_ip = target_ip.clone();
         let task = tokio::spawn(async move {
             let result = timeout(Duration::from_secs(1), scan_port(target_ip, port)).await;
