@@ -1,9 +1,23 @@
 use std::env;
-use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
-use std::time::Instant;
+use std::net::IpAddr;
 use std::process;
+use std::str::FromStr;
+use std::time::Instant;
+use tokio::net::TcpStream;
+use tokio::time::timeout;
+use tokio::time::Duration;
 
-fn main() {
+async fn scan_port(target_ip: IpAddr, port: u16) {
+    let addr = format!("{}:{}", target_ip, port);
+    let stream = TcpStream::connect(addr).await;
+
+    if let Ok(_) = stream {
+        println!("Port {} is open", port);
+    }
+}
+
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         println!("Invalid amount of arguments");
@@ -11,16 +25,15 @@ fn main() {
         process::exit(1);
     }
 
-    let target = args[1].clone();
-    let addrs: Vec<SocketAddr> = match (target.as_str(), 0).to_socket_addrs() {
-        Ok(addrs) => addrs.collect(),
+    let target_ip = match IpAddr::from_str(&args[1]) {
+        Ok(ip) => ip,
         Err(_) => {
             println!("Cannot resolve hostname");
             process::exit(1);
         }
     };
 
-    let target_ip = addrs[0].ip();
+    
 
     let lines = "-".repeat(50);
 
@@ -29,11 +42,20 @@ fn main() {
     println!("Start time: {:?}", Instant::now());
     println!("{}", lines);
 
+    let mut tasks = Vec::new();
     for port in 1..=1000 {
-        let addr = format!("{}:{}", target_ip, port);
-        match TcpStream::connect_timeout(&addr.parse().unwrap(), std::time::Duration::from_secs(1)) {
-            Ok(_) => println!("Port {} is open", port),
-            Err(_) => (),
-        }
+        let target_ip = target_ip.clone();
+        let task = tokio::spawn(async move {
+            let result = timeout(Duration::from_secs(1), scan_port(target_ip, port)).await;
+            if result.is_err() {
+                //println!("Port {} is closed", port);
+            }
+        });
+        tasks.push(task);
+    }
+
+    // Wait for all tasks to complete
+    for task in tasks {
+        let _ = task.await;
     }
 }
