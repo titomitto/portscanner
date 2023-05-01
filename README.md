@@ -14,7 +14,7 @@ cargo build --release
 
 This will build an optimized release build of the tool in the `target/release` directory. You can then run the tool by running the `portscanner` binary in the `target/release` directory.
 
-Alternatively, you can download the built version of the tool from the GitHub releases page. The latest release is [v1.0.0](https://github.com/TitoMitto/portscanner/releases/tag/v1.0.0). Simply download the appropriate binary for your operating system and architecture, and run it to use the tool.
+<!-- Alternatively, you can download the built version of the tool from the GitHub releases page. The latest release is [v1.0.0](https://github.com/TitoMitto/portscanner/releases/tag/v1.0.0). Simply download the appropriate binary for your operating system and architecture, and run it to use the tool. -->
 
 ## Usage
 
