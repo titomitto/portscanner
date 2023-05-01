@@ -2,10 +2,10 @@ use std::env;
 use std::net::IpAddr;
 use std::process;
 use std::str::FromStr;
-use std::time::Instant;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 use tokio::time::Duration;
+use chrono::{Local};
 
 async fn scan_port(target_ip: IpAddr, port: u16) {
     let addr = format!("{}:{}", target_ip, port);
@@ -19,9 +19,9 @@ async fn scan_port(target_ip: IpAddr, port: u16) {
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
+    if args.len() < 2 {
         println!("Invalid amount of arguments");
-        println!("Syntax: awesome_scanner <ip_address>");
+        println!("Syntax: awesome_scanner <ip_address> [max_port]");
         process::exit(1);
     }
 
@@ -49,10 +49,11 @@ async fn main() {
     
 
     let lines = "-".repeat(50);
+    let start_time = Local::now();
 
     println!("{}", lines);
-    println!("Scanning target {}", target_ip);
-    println!("Start time: {:?}", Instant::now());
+    println!("Scanning target {} up to port {}", target_ip, max_port);
+    println!("Start time: {}", start_time.format("%Y-%m-%d %H:%M:%S"));
     println!("{}", lines);
 
     let mut tasks = Vec::new();
@@ -67,7 +68,6 @@ async fn main() {
         tasks.push(task);
     }
 
-    // Wait for all tasks to complete
     for task in tasks {
         let _ = task.await;
     }
