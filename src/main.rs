@@ -16,7 +16,7 @@ async fn scan_port(target_ip: IpAddr, port: u16) {
 
 #[tokio::main]
 async fn main() {
-    let matches = App::new("Awesome Port Scanner")
+    let matches = App::new("PortScanner")
         .arg(Arg::with_name("IP_ADDRESS")
             .help("The IP address to scan")
             .required(true)
