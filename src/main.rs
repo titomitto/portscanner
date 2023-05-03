@@ -2,6 +2,7 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use clap::{App, Arg};
 use tokio::net::TcpStream;
+use std::net::{ToSocketAddrs, SocketAddr};
 use std::time::Duration;
 use tokio::time::timeout;
 
@@ -14,11 +15,17 @@ async fn scan_port(target_ip: IpAddr, port: u16) {
     }
 }
 
+fn get_ip_address(domain: &str) -> Result<Vec<SocketAddr>, std::io::Error> {
+    let addr = format!("{}:80", domain);
+    let socket_addrs = addr.to_socket_addrs()?.collect();
+    Ok(socket_addrs)
+}
+
 #[tokio::main]
 async fn main() {
     let matches = App::new("PortScanner")
-        .arg(Arg::with_name("IP_ADDRESS")
-            .help("The IP address to scan")
+            .arg(Arg::with_name("DOMAIN")
+            .help("The domain or IP address to scan")
             .required(true)
             .index(1))
         .arg(Arg::with_name("MAX_PORT")
@@ -29,8 +36,21 @@ async fn main() {
             .default_value("1000"))
         .get_matches();
 
-    let target_ip = matches.value_of("IP_ADDRESS").unwrap();
-    let target_ip = IpAddr::from_str(target_ip).unwrap();
+        let domain_or_ip = matches.value_of("DOMAIN").unwrap();
+        let target_ip = match IpAddr::from_str(domain_or_ip) {
+            Ok(ip) => ip,
+            Err(_) => {
+                let ips = get_ip_address(domain_or_ip).unwrap();
+                // Use the first IP address in the list
+                if let Some(ip) = ips.first() {
+                    ip.ip()
+                } else {
+                    eprintln!("Error: Unable to resolve domain name to an IP address.");
+                    return;
+                }
+            }
+        };
+    
 
     let max_port = matches.value_of("MAX_PORT").unwrap().parse::<u16>().unwrap();
 
