@@ -41,7 +41,6 @@ async fn main() {
             Ok(ip) => ip,
             Err(_) => {
                 let ips = get_ip_address(domain_or_ip).unwrap();
-                // Use the first IP address in the list
                 if let Some(ip) = ips.first() {
                     ip.ip()
                 } else {
